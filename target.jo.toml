@@ -1,0 +1,18 @@
+[target.m2_max]
+arch       = "arm64"
+p_cores    = 8
+e_cores    = 2
+cache_line = 128
+l1d        = 131072        # 128 KiB
+l2         = 16777216      # 16 MiB
+slc        = 100663296     # 96 MiB
+ram        = 137438953472  # 128 GiB
+
+[target.i7_1185g7]
+arch       = "x86_64"
+p_cores    = 4
+cache_line = 64
+l1d        = 196608
+l2         = 5242880
+l3         = 12582912
+ram        = 33285996544

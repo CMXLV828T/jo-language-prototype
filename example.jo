@@ -1,0 +1,193 @@
+@Josephine
+type Order struct {
+    id:              uint64;
+    price:           uint64;
+    quantity:        int64;
+    flags:           uint64;
+    risk_result:     uint64;
+    greeks_result:   uint64;
+    margin_result:   uint64;
+    vol_result:      uint64;
+    exposure_result: uint64;
+    pnl_result:      uint64;
+    meta:            [byte; 48];
+}
+
+@Josephine
+ring orders: Order[1024]
+
+type RiskRet struct {
+    order_idx:   uint64;
+    risk_result: uint64;
+}
+
+type GreeksRet struct {
+    order_idx:     uint64;
+    greeks_result: uint64;
+}
+
+type MarginRet struct {
+    order_idx:     uint64;
+    margin_result: uint64;
+}
+
+type VolRet struct {
+    order_idx:  uint64;
+    vol_result: uint64;
+}
+
+type ExposureRet struct {
+    order_idx:       uint64;
+    exposure_result: uint64;
+}
+
+type PnLRet struct {
+    order_idx:  uint64;
+    pnl_result: uint64;
+}
+
+@Worker
+func ComputeRisk(order: Order) -> RiskRet {
+    let pq = order.price * order.quantity;
+    let p17 = order.price * 17u64;
+    let step1 = pq + p17;
+    let step2 = step1 * 3u64;
+    let q7 = order.quantity * 7u64;
+    let f13 = order.flags * 13u64;
+    let score = step2 + q7 + f13;
+    let result = RiskRet { order_idx: order.id, risk_result: score };
+    return result;
+}
+
+@Worker
+func ComputeGreeks(order: Order) -> GreeksRet {
+    let pp = order.price * order.price;
+    let pp_scaled = pp / 1000u64;
+    let qq = order.quantity * order.quantity;
+    let qq_scaled = qq / 100u64;
+    let f31 = order.flags * 31u64;
+    let p41 = order.price * 41u64;
+    let greeks = pp_scaled + qq_scaled + f31 + p41;
+    let result = GreeksRet { order_idx: order.id, greeks_result: greeks };
+    return result;
+}
+
+@Worker
+func ComputeMargin(order: Order) -> MarginRet {
+    let sum_pq = order.price + order.quantity;
+    let diff_pq = order.price - order.quantity;
+    let cross = sum_pq * diff_pq;
+    let f97 = order.flags * 97u64;
+    let p53 = order.price * 53u64;
+    let margin = cross + f97 + p53;
+    let result = MarginRet { order_idx: order.id, margin_result: margin };
+    return result;
+}
+
+@Worker
+func ComputeVol(order: Order) -> VolRet {
+    let p127 = order.price * 127u64;
+    let q131 = order.quantity * 131u64;
+    let f137 = order.flags * 137u64;
+    let pq10 = order.price * order.quantity / 10u64;
+    let vol = p127 + q131 + f137 + pq10;
+    let result = VolRet { order_idx: order.id, vol_result: vol };
+    return result;
+}
+
+@Worker
+func ComputeExposure(order: Order) -> ExposureRet {
+    let a = order.price * 3u64 + order.quantity * 5u64;
+    let b = order.flags + 7u64;
+    let ab = a * b;
+    let p67 = order.price * 67u64;
+    let exposure = ab + p67;
+    let result = ExposureRet { order_idx: order.id, exposure_result: exposure };
+    return result;
+}
+
+@Worker
+func ComputePnL(order: Order) -> PnLRet {
+    let pq2 = order.price * order.quantity * 2u64;
+    let p71 = order.price * 71u64;
+    let q73 = order.quantity * 73u64;
+    let f79 = order.flags * 79u64;
+    let pnl = pq2 + p71 + q73 + f79;
+    let result = PnLRet { order_idx: order.id, pnl_result: pnl };
+    return result;
+}
+
+@Joseph
+func main() -> () {
+    while true {
+        Worker.scan(ComputeRisk);
+        Worker.scan(ComputeGreeks);
+        Worker.scan(ComputeMargin);
+        Worker.scan(ComputeVol);
+        Worker.scan(ComputeExposure);
+        Worker.scan(ComputePnL);
+
+        var i = 0u64;
+        while i < 100u64 {
+            var order = Josephine.orders[i];
+
+            if order.risk_result != 0u64 {
+                let expect_risk = ((order.price * order.quantity) + (order.price * 17u64)) * 3u64 + order.quantity * 7u64 + order.flags * 13u64;
+                if order.risk_result != expect_risk {
+                    order.id = 57005u64;
+                }
+            }
+
+            if order.greeks_result != 0u64 {
+                let expect_greeks = order.price * order.price / 1000u64 + order.quantity * order.quantity / 100u64 + order.flags * 31u64 + order.price * 41u64;
+                if order.greeks_result != expect_greeks {
+                    order.id = 57006u64;
+                }
+            }
+
+            if order.margin_result != 0u64 {
+                let expect_margin = (order.price + order.quantity) * (order.price - order.quantity) + order.flags * 97u64 + order.price * 53u64;
+                if order.margin_result != expect_margin {
+                    order.id = 57007u64;
+                }
+            }
+
+            if order.vol_result != 0u64 {
+                let expect_vol = order.price * 127u64 + order.quantity * 131u64 + order.flags * 137u64 + order.price * order.quantity / 10u64;
+                if order.vol_result != expect_vol {
+                    order.id = 57008u64;
+                }
+            }
+
+            if order.exposure_result != 0u64 {
+                let expect_exposure = (order.price * 3u64 + order.quantity * 5u64) * (order.flags + 7u64) + order.price * 67u64;
+                if order.exposure_result != expect_exposure {
+                    order.id = 57009u64;
+                }
+            }
+
+            if order.pnl_result != 0u64 {
+                let expect_pnl = order.price * order.quantity * 2u64 + order.price * 71u64 + order.quantity * 73u64 + order.flags * 79u64;
+                if order.pnl_result != expect_pnl {
+                    order.id = 57010u64;
+                }
+            }
+
+            order.price = order.price + 1u64;
+            i++;
+        }
+
+        var d = 0u64;
+        while d < 100u64 {
+            Worker.ComputeRisk(Josephine.orders[d]);
+            Worker.ComputeGreeks(Josephine.orders[d]);
+            Worker.ComputeMargin(Josephine.orders[d]);
+            Worker.ComputeVol(Josephine.orders[d]);
+            Worker.ComputeExposure(Josephine.orders[d]);
+            Worker.ComputePnL(Josephine.orders[d]);
+            d++;
+        }
+
+        Worker.flush();
+    }
+}
