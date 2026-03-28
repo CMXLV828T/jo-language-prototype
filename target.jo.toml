@@ -16,3 +16,18 @@ l1d        = 196608
 l2         = 5242880
 l3         = 12582912
 ram        = 33285996544
+
+[target.zen4_7500f]
+arch = "x86_64"
+cpu = "znver4"
+cores = 6
+threads_per_core = 2
+cache_line = 64
+l1d = 32768
+l2 = 1048576
+l3 = 33554432
+memory_model = "tso"
+store_release = "mov"
+triple = "x86_64-unknown-linux-gnu"
+mmap_flags = ["MAP_PRIVATE", "MAP_ANONYMOUS", "MAP_HUGETLB"]
+timing_api = "clock_gettime"
